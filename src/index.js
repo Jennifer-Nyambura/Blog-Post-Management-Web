@@ -1,3 +1,4 @@
+
 // Global variables
 let posts = [];
 let currentPostId = null;
@@ -14,17 +15,13 @@ function main() {
 async function displayPosts() {
     try {
         const response = await fetch(`${BASE_URL}/posts`);
-        
-        if (!response.ok) {
-            throw new Error('Failed to fetch posts');
-        }
-        
+        if (!response.ok) throw new Error('Failed to fetch posts');
+
         posts = await response.json();
         renderPostList();
-        
-        // Show first post details by default (advanced deliverable)
+
         if (posts.length > 0) {
-            handlePostClick(posts[0]);
+            handlePostClick(posts[0]); // Show first post on load
         }
     } catch (error) {
         console.error('Error fetching posts:', error);
@@ -36,12 +33,12 @@ async function displayPosts() {
 function renderPostList() {
     const postList = document.getElementById('post-list');
     postList.innerHTML = '';
-    
+
     if (posts.length === 0) {
         postList.innerHTML = '<li class="empty-state">No posts available</li>';
         return;
     }
-    
+
     posts.forEach(post => {
         const listItem = document.createElement('li');
         listItem.className = 'post-item';
@@ -49,43 +46,37 @@ function renderPostList() {
             <div class="post-title">${post.title}</div>
             <div class="post-author">by ${post.author}</div>
         `;
-        
         listItem.addEventListener('click', () => handlePostClick(post));
         postList.appendChild(listItem);
     });
+
+    updateActivePost(currentPostId);
 }
 
 // Handle post click to show details
 async function handlePostClick(post) {
     try {
         const response = await fetch(`${BASE_URL}/posts/${post.id}`);
-        
-        if (!response.ok) {
-            throw new Error('Failed to fetch post details');
-        }
-        
+        if (!response.ok) throw new Error('Failed to fetch post details');
+
         const postData = await response.json();
         currentPostId = postData.id;
         displayPostDetails(postData);
         updateActivePost(postData.id);
-        
     } catch (error) {
         console.error('Error fetching post details:', error);
-        // Use the post data we already have as fallback
         currentPostId = post.id;
         displayPostDetails(post);
         updateActivePost(post.id);
     }
 }
 
-// Display post details in the main content area
+// Display post details
 function displayPostDetails(post) {
     const postDetail = document.getElementById('post-detail');
     const editForm = document.getElementById('edit-post-form');
-    
-    // Hide edit form if it's showing
     editForm.classList.add('hidden');
-    
+
     postDetail.innerHTML = `
         <div class="post-detail-content">
             <h2 class="post-detail-title">${post.title}</h2>
@@ -99,104 +90,91 @@ function displayPostDetails(post) {
     `;
 }
 
-// Update active post styling
+// Highlight selected post
 function updateActivePost(postId) {
     const postItems = document.querySelectorAll('.post-item');
     postItems.forEach(item => item.classList.remove('active'));
-    
-    const activeIndex = posts.findIndex(p => p.id === postId);
-    if (activeIndex !== -1) {
-        postItems[activeIndex].classList.add('active');
+
+    const index = posts.findIndex(p => p.id === postId);
+    if (index !== -1) {
+        postItems[index].classList.add('active');
     }
 }
 
-// Add new post listener
+// Handle new post creation
 function addNewPostListener() {
     const form = document.getElementById('new-post-form');
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const formData = new FormData(form);
         const newPost = {
             title: formData.get('title'),
             content: formData.get('content'),
             author: formData.get('author')
         };
-        
+
         try {
             const response = await fetch(`${BASE_URL}/posts`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newPost)
             });
-            
-            if (!response.ok) {
-                throw new Error('Failed to create post');
-            }
-            
+
+            if (!response.ok) throw new Error('Failed to create post');
+
             const savedPost = await response.json();
             posts.push(savedPost);
             renderPostList();
             form.reset();
-            
-            // Show the new post details
             handlePostClick(savedPost);
-            
+            showFormMessage('✅ Post created successfully!');
         } catch (error) {
             console.error('Error creating post:', error);
-            alert('Failed to create post. Please try again.');
+            showFormMessage('❌ Failed to create post. Please try again.', 'error');
         }
     });
 }
 
-// Setup edit form listeners
+// Setup edit form
 function setupEditFormListeners() {
     const editForm = document.getElementById('edit-post-form');
     const cancelBtn = document.getElementById('cancel-edit');
-    
+
     editForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const formData = new FormData(editForm);
         const updatedPost = {
             title: formData.get('title'),
             content: formData.get('content'),
             author: posts.find(p => p.id === currentPostId)?.author || 'Unknown'
         };
-        
+
         try {
             const response = await fetch(`${BASE_URL}/posts/${currentPostId}`, {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedPost)
             });
-            
-            if (!response.ok) {
-                throw new Error('Failed to update post');
-            }
-            
+
+            if (!response.ok) throw new Error('Failed to update post');
+
             const savedPost = await response.json();
             updateLocalPost(savedPost);
             renderPostList();
             displayPostDetails(savedPost);
             updateActivePost(currentPostId);
-            
         } catch (error) {
             console.error('Error updating post:', error);
-            alert('Failed to update post. Please try again.');
+            showFormMessage('❌ Failed to update post.', 'error');
         }
     });
-    
+
     cancelBtn.addEventListener('click', () => {
         editForm.classList.add('hidden');
         const currentPost = posts.find(p => p.id === currentPostId);
-        if (currentPost) {
-            displayPostDetails(currentPost);
-        }
+        if (currentPost) displayPostDetails(currentPost);
     });
 }
 
@@ -204,38 +182,31 @@ function setupEditFormListeners() {
 function showEditForm() {
     const currentPost = posts.find(p => p.id === currentPostId);
     if (!currentPost) return;
-    
+
     const editForm = document.getElementById('edit-post-form');
     const postDetail = document.getElementById('post-detail');
-    
-    // Fill form with current data
+
     document.getElementById('edit-title').value = currentPost.title;
     document.getElementById('edit-content').value = currentPost.content;
-    
-    // Hide post details and show edit form
+
     postDetail.innerHTML = '';
     editForm.classList.remove('hidden');
 }
 
 // Delete post
 async function deletePost(postId) {
-    if (!confirm('Are you sure you want to delete this post?')) {
-        return;
-    }
-    
+    if (!confirm('Are you sure you want to delete this post?')) return;
+
     try {
         const response = await fetch(`${BASE_URL}/posts/${postId}`, {
             method: 'DELETE'
         });
-        
-        if (!response.ok) {
-            throw new Error('Failed to delete post');
-        }
-        
+
+        if (!response.ok) throw new Error('Failed to delete post');
+
         removeLocalPost(postId);
         renderPostList();
-        
-        // Clear post details
+
         const postDetail = document.getElementById('post-detail');
         postDetail.innerHTML = `
             <div class="empty-state">
@@ -243,32 +214,30 @@ async function deletePost(postId) {
                 <p>Select another post to view its details.</p>
             </div>
         `;
-        
-        // Show first post if available
+
         if (posts.length > 0) {
             setTimeout(() => handlePostClick(posts[0]), 1000);
         }
-        
+
+        showFormMessage('🗑️ Post deleted!');
     } catch (error) {
         console.error('Error deleting post:', error);
-        alert('Failed to delete post. Please try again.');
+        showFormMessage('❌ Failed to delete post.', 'error');
     }
 }
 
-// Update local post data
+// Helper to update local post data
 function updateLocalPost(updatedPost) {
     const index = posts.findIndex(p => p.id === updatedPost.id);
-    if (index !== -1) {
-        posts[index] = updatedPost;
-    }
+    if (index !== -1) posts[index] = updatedPost;
 }
 
-// Remove local post data
+// Helper to remove post locally
 function removeLocalPost(postId) {
     posts = posts.filter(p => p.id !== postId);
 }
 
-// Display error message when API is not available
+// Show error when API fails
 function displayErrorMessage() {
     const postList = document.getElementById('post-list');
     postList.innerHTML = `
@@ -280,5 +249,17 @@ function displayErrorMessage() {
     `;
 }
 
-// Start the application when DOM is loaded
+// Show feedback messages
+function showFormMessage(message, type = 'success') {
+    const messageBox = document.getElementById('form-message');
+    messageBox.textContent = message;
+    messageBox.className = `form-message ${type}`;
+    messageBox.classList.remove('hidden');
+
+    setTimeout(() => {
+        messageBox.classList.add('hidden');
+    }, 3000);
+}
+
+// Start the application when DOM is ready
 document.addEventListener('DOMContentLoaded', main);
