@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Post Manager</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✍️ Blog Post Manager</h1>
+            <p>Manage your blog posts with style</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <h2>📝 All Posts</h2>
+                <ul id="post-list">
+                    <li class="loading">Loading posts</li>
+                </ul>
+            </div>
+            
+            <div class="content-area">
+                <div id="post-detail">
+                    <div class="empty-state">
+                        <h3>👈 Select a post to view details</h3>
+                        <p>Click on any post title from the list to see its full content.</p>
+                    </div>
+                </div>
+                
+                <form id="edit-post-form" class="hidden">
+                    <h4>✏️ Update Post Details</h4>
+                    <div class="form-group">
+                        <label for="edit-title">Title:</label>
+                        <input type="text" name="title" id="edit-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-content">Content:</label>
+                        <textarea name="content" id="edit-content" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-submit">Update Post</button>
+                    <button type="button" id="cancel-edit" class="btn btn-cancel">Cancel</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h3>➕ Add New Post</h3>
+            <form id="new-post-form">
+                <div class="form-group">
+                    <label for="new-title">Title:</label>
+                    <input type="text" name="title" id="new-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-content">Content:</label>
+                    <textarea name="content" id="new-content" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="new-author">Author:</label>
+                    <input type="text" name="author" id="new-author" required>
+                </div>
+                <button type="submit" class="btn-submit">Add Post</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="src/index.js"></script>
+</body>
+</html>
